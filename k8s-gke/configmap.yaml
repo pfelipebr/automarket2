@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: automarket-config
+  namespace: automarket
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  CORS_ORIGIN: "https://demo.aidevcowork.com"
+  JWT_EXPIRY: "15m"
+  REFRESH_TOKEN_EXPIRY: "30d"
+  STORAGE_DRIVER: "minio"
+  MINIO_ENDPOINT: "minio-svc"
+  MINIO_PORT: "9000"
+  MINIO_USE_SSL: "false"
+  MINIO_BUCKET: "automarket-images"
+  MINIO_PUBLIC_URL: "https://demo.aidevcowork.com/minio"
+  GEOCODING_PROVIDER: "nominatim"
+  NOMINATIM_BASE_URL: "https://nominatim.openstreetmap.org"

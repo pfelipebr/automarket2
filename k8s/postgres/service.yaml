@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-svc
+  namespace: automarket
+spec:
+  # Headless service — necessário para StatefulSet
+  # Os pods se registram como: postgres-0.postgres-svc.automarket.svc.cluster.local
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432

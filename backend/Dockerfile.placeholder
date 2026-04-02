@@ -1,0 +1,8 @@
+# Dockerfile simplificado para validar a infraestrutura K8s
+# antes do código real estar pronto. Substitua por Dockerfile
+# quando tiver o código Fastify/TypeScript.
+FROM node:20-alpine
+WORKDIR /app
+COPY server.placeholder.js ./server.js
+EXPOSE 3000
+CMD ["node", "server.js"]

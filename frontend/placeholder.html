@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AutoMarket</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      text-align: center;
+      padding: 3rem 4rem;
+      background: #1e293b;
+      border-radius: 1.5rem;
+      border: 1px solid #334155;
+      max-width: 480px;
+    }
+    .logo { font-size: 3rem; margin-bottom: 1rem; }
+    h1 { font-size: 2rem; font-weight: 700; color: #38bdf8; margin-bottom: .5rem; }
+    p  { color: #94a3b8; margin-bottom: 1.5rem; line-height: 1.6; }
+    .badge {
+      display: inline-block;
+      background: #064e3b;
+      color: #34d399;
+      border: 1px solid #059669;
+      border-radius: 2rem;
+      padding: .4rem 1.2rem;
+      font-size: .85rem;
+      font-weight: 600;
+    }
+    .infra {
+      margin-top: 2rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .chip {
+      background: #1e3a5f;
+      border: 1px solid #2563eb;
+      border-radius: .5rem;
+      padding: .3rem .8rem;
+      font-size: .75rem;
+      color: #93c5fd;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🚗</div>
+    <h1>AutoMarket</h1>
+    <p>Infraestrutura K8s operacional.<br>Aguardando o deploy da aplicação React.</p>
+    <span class="badge">✓ Cluster funcionando</span>
+    <div class="infra">
+      <span class="chip">PostgreSQL</span>
+      <span class="chip">Redis</span>
+      <span class="chip">MinIO</span>
+      <span class="chip">Ingress</span>
+    </div>
+  </div>
+</body>
+</html>

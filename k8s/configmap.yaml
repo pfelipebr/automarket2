@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: automarket-config
+  namespace: automarket
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  # Para kind local, o domínio é localhost (via port-forward ou NodePort)
+  CORS_ORIGIN: "http://localhost:8080"
+  JWT_EXPIRY: "15m"
+  REFRESH_TOKEN_EXPIRY: "30d"
+  # Storage: minio (interno ao cluster)
+  STORAGE_DRIVER: "minio"
+  MINIO_ENDPOINT: "minio-svc"
+  MINIO_PORT: "9000"
+  MINIO_USE_SSL: "false"
+  MINIO_BUCKET: "automarket-images"
+  # Geocoding público gratuito
+  GEOCODING_PROVIDER: "nominatim"
+  NOMINATIM_BASE_URL: "https://nominatim.openstreetmap.org"

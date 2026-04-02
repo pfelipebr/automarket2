@@ -1,0 +1,9 @@
+# Dockerfile simplificado para validar a infraestrutura K8s
+# antes do código real estar pronto. Substitua por Dockerfile
+# quando tiver o código React.
+FROM nginx:1.25-alpine
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY placeholder.html /usr/share/nginx/html/index.html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,0 +1,20 @@
+export const config = {
+  port: parseInt(process.env.PORT ?? '3000', 10),
+  nodeEnv: process.env.NODE_ENV ?? 'development',
+  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  jwtSecret: process.env.JWT_SECRET ?? 'dev-secret-change-in-production',
+  jwtExpiry: process.env.JWT_EXPIRY ?? '15m',
+  refreshTokenExpiry: process.env.REFRESH_TOKEN_EXPIRY ?? '30d',
+  databaseUrl: process.env.DATABASE_URL ?? '',
+  redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
+  storageDriver: (process.env.STORAGE_DRIVER ?? 'minio') as 'minio' | 's3',
+  minio: {
+    endpoint: process.env.MINIO_ENDPOINT ?? 'localhost',
+    port: parseInt(process.env.MINIO_PORT ?? '9000', 10),
+    publicUrl: process.env.MINIO_PUBLIC_URL ?? null,
+    accessKey: process.env.MINIO_ACCESS_KEY ?? 'automarket-admin',
+    secretKey: process.env.MINIO_SECRET_KEY ?? 'automarket-secret',
+    bucket: process.env.MINIO_BUCKET ?? 'automarket-images',
+  },
+  geocodingProvider: process.env.GEOCODING_PROVIDER ?? 'nominatim',
+};
