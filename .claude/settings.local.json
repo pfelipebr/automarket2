@@ -99,7 +99,16 @@
       "Bash(npm audit:*)",
       "Bash(npm why:*)",
       "Bash(npm view:*)",
-      "Bash(node -e \"const v=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const arr=JSON.parse\\(v\\); console.log\\(arr.slice\\(-5\\).join\\(''''\\\\n''''\\)\\)\")"
+      "Bash(node -e \"const v=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const arr=JSON.parse\\(v\\); console.log\\(arr.slice\\(-5\\).join\\(''''\\\\n''''\\)\\)\")",
+      "Bash(gcloud iam:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''state:'''', d.get\\(''''state''''\\)\\); print\\(''''condition:'''', d.get\\(''''attributeCondition'''',''''none''''\\)\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''lockfileVersion:'''', d.get\\(''''lockfileVersion''''\\)\\); pkgs=d.get\\(''''packages'''',{}\\); vitest=pkgs.get\\(''''node_modules/vitest'''',{}\\); print\\(''''vitest installed:'''', vitest.get\\(''''version'''',''''not found''''\\)\\); jsdom=pkgs.get\\(''''node_modules/jsdom'''',{}\\); print\\(''''jsdom installed:'''', jsdom.get\\(''''version'''',''''not found''''\\)\\)\")",
+      "Bash(ls /usr/local/bin/node*)",
+      "Bash(ls ~/.nvm/versions/node/*/bin/npm)",
+      "Bash(command -v npm)",
+      "Bash(export PATH=/opt/homebrew/bin:$PATH)",
+      "Bash(npm info:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

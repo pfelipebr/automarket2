@@ -62,12 +62,16 @@ if gcloud iam workload-identity-pools providers describe "${PROVIDER_NAME}" \
      --workload-identity-pool="${POOL_NAME}" &>/dev/null; then
   echo "      Provider '${PROVIDER_NAME}' already exists — skipping."
 else
+  # Note: --attribute-condition restricts which tokens the provider accepts.
+  # We use a broad org-level condition here; the real per-repo security is
+  # enforced by the IAM binding in step 6 (principalSet scoped to the repo).
   gcloud iam workload-identity-pools providers create-oidc "${PROVIDER_NAME}" \
     --project="${PROJECT_ID}" \
     --location="global" \
     --workload-identity-pool="${POOL_NAME}" \
     --display-name="GitHub provider" \
     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.actor=assertion.actor" \
+    --attribute-condition="attribute.repository.startsWith(\"${GITHUB_ORG}/\")" \
     --issuer-uri="https://token.actions.githubusercontent.com"
   echo "      Provider created."
 fi
