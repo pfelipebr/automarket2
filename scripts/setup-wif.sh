@@ -35,49 +35,78 @@ gcloud services enable \
   iam.googleapis.com \
   iamcredentials.googleapis.com \
   cloudresourcemanager.googleapis.com \
-  --project="${PROJECT_ID}" --quiet
+  artifactregistry.googleapis.com \
+  container.googleapis.com \
+  --project="${PROJECT_ID}"
+
+echo "      Waiting 15s for API activation to propagate..."
+sleep 15
 
 # ── 2. Create Workload Identity Pool ─────────────────────────────────────────
 echo "[2/6] Creating Workload Identity Pool..."
-gcloud iam workload-identity-pools create "${POOL_NAME}" \
-  --project="${PROJECT_ID}" \
-  --location="global" \
-  --display-name="GitHub Actions Pool" \
-  --quiet 2>/dev/null || echo "  Pool already exists — skipping."
+if gcloud iam workload-identity-pools describe "${POOL_NAME}" \
+     --project="${PROJECT_ID}" --location="global" &>/dev/null; then
+  echo "      Pool '${POOL_NAME}' already exists — skipping."
+else
+  gcloud iam workload-identity-pools create "${POOL_NAME}" \
+    --project="${PROJECT_ID}" \
+    --location="global" \
+    --display-name="GitHub Actions Pool"
+  echo "      Pool created."
+fi
 
 # ── 3. Create OIDC Provider ───────────────────────────────────────────────────
 echo "[3/6] Creating OIDC Provider..."
-gcloud iam workload-identity-pools providers create-oidc "${PROVIDER_NAME}" \
-  --project="${PROJECT_ID}" \
-  --location="global" \
-  --workload-identity-pool="${POOL_NAME}" \
-  --display-name="GitHub provider" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.actor=assertion.actor" \
-  --attribute-condition="assertion.repository=='${GITHUB_ORG}/${GITHUB_REPO}'" \
-  --issuer-uri="https://token.actions.githubusercontent.com" \
-  --quiet 2>/dev/null || echo "  Provider already exists — skipping."
+if gcloud iam workload-identity-pools providers describe "${PROVIDER_NAME}" \
+     --project="${PROJECT_ID}" --location="global" \
+     --workload-identity-pool="${POOL_NAME}" &>/dev/null; then
+  echo "      Provider '${PROVIDER_NAME}' already exists — skipping."
+else
+  gcloud iam workload-identity-pools providers create-oidc "${PROVIDER_NAME}" \
+    --project="${PROJECT_ID}" \
+    --location="global" \
+    --workload-identity-pool="${POOL_NAME}" \
+    --display-name="GitHub provider" \
+    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.actor=assertion.actor" \
+    --issuer-uri="https://token.actions.githubusercontent.com"
+  echo "      Provider created."
+fi
 
 # ── 4. Create Service Account ─────────────────────────────────────────────────
 echo "[4/6] Creating Service Account..."
-gcloud iam service-accounts create "${SA_NAME}" \
-  --project="${PROJECT_ID}" \
-  --display-name="GitHub Actions Deployer" \
-  --quiet 2>/dev/null || echo "  Service account already exists — skipping."
+if gcloud iam service-accounts describe "${SA_EMAIL}" \
+     --project="${PROJECT_ID}" &>/dev/null; then
+  echo "      Service account '${SA_EMAIL}' already exists — skipping."
+else
+  gcloud iam service-accounts create "${SA_NAME}" \
+    --project="${PROJECT_ID}" \
+    --display-name="GitHub Actions Deployer"
+  echo "      Service account created. Waiting 10s for propagation..."
+  sleep 10
+fi
+
+# Verify SA exists before proceeding
+if ! gcloud iam service-accounts describe "${SA_EMAIL}" --project="${PROJECT_ID}" &>/dev/null; then
+  echo "ERROR: Service account '${SA_EMAIL}' could not be created or found."
+  echo "       Check that your account has 'roles/iam.serviceAccountAdmin' on project ${PROJECT_ID}."
+  exit 1
+fi
+echo "      Service account verified."
 
 # ── 5. Grant IAM roles to the Service Account ─────────────────────────────────
 echo "[5/6] Granting IAM roles..."
 
-# Push images to Artifact Registry
+echo "      Granting artifactregistry.writer..."
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --member="serviceAccount:${SA_EMAIL}" \
   --role="roles/artifactregistry.writer" \
-  --quiet
+  --condition=None
 
-# Get GKE credentials + deploy (kubectl set image / rollout)
+echo "      Granting container.developer..."
 gcloud projects add-iam-policy-binding "${PROJECT_ID}" \
   --member="serviceAccount:${SA_EMAIL}" \
   --role="roles/container.developer" \
-  --quiet
+  --condition=None
 
 # ── 6. Allow GitHub repo to impersonate the Service Account ──────────────────
 echo "[6/6] Binding Workload Identity to Service Account..."
@@ -89,13 +118,12 @@ PROVIDER_RESOURCE="${POOL_RESOURCE}/providers/${PROVIDER_NAME}"
 gcloud iam service-accounts add-iam-policy-binding "${SA_EMAIL}" \
   --project="${PROJECT_ID}" \
   --role="roles/iam.workloadIdentityUser" \
-  --member="principalSet://iam.googleapis.com/${POOL_RESOURCE}/attribute.repository/${GITHUB_ORG}/${GITHUB_REPO}" \
-  --quiet
+  --member="principalSet://iam.googleapis.com/${POOL_RESOURCE}/attribute.repository/${GITHUB_ORG}/${GITHUB_REPO}"
 
 # ── Print GitHub Secrets ──────────────────────────────────────────────────────
 echo ""
 echo "════════════════════════════════════════════════════════════════"
-echo "  Add the following secrets to your GitHub repository:"
+echo "  Setup complete! Add these secrets to your GitHub repository:"
 echo "  Settings → Secrets and variables → Actions → New repository secret"
 echo "════════════════════════════════════════════════════════════════"
 echo ""

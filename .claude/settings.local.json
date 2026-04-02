@@ -92,7 +92,14 @@
       "Bash(export PATH=\"/tmp/google-cloud-sdk/bin:/usr/local/bin:/Applications/Docker.app/Contents/Resources/bin:/opt/homebrew/bin:$PATH\")",
       "Bash(export PATH=\"/tmp/google-cloud-sdk/bin:/usr/local/bin:/opt/homebrew/bin:$PATH\")",
       "Bash(find /Users/pfelipe/Desktop/AutoMarket -name .github -o -name *.yml -o -name *.yaml)",
-      "Bash(chmod +x /Users/pfelipe/Desktop/AutoMarket/scripts/setup-wif.sh)"
+      "Bash(chmod +x /Users/pfelipe/Desktop/AutoMarket/scripts/setup-wif.sh)",
+      "Bash(npm install:*)",
+      "Bash(export PATH=\"/opt/homebrew/bin:/usr/local/bin:$PATH\")",
+      "Bash(grep -rn \"from ''bcrypt''\" /Users/pfelipe/Desktop/AutoMarket/backend/src/)",
+      "Bash(npm audit:*)",
+      "Bash(npm why:*)",
+      "Bash(npm view:*)",
+      "Bash(node -e \"const v=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const arr=JSON.parse\\(v\\); console.log\\(arr.slice\\(-5\\).join\\(''''\\\\n''''\\)\\)\")"
     ]
   }
 }

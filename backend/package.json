@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "build": "tsc",
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -16,7 +16,7 @@
     "@fastify/formbody": "^7.4.0",
     "@fastify/multipart": "^8.3.0",
     "@prisma/client": "^5.16.1",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "fastify": "^4.28.1",
     "jsonwebtoken": "^9.0.2",
     "redis": "^4.6.15",
@@ -25,15 +25,15 @@
     "fastify-plugin": "^4.5.1"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
+    "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.10",
     "@types/uuid": "^10.0.0",
-    "@vitest/coverage-v8": "^1.6.0",
+    "@vitest/coverage-v8": "^4.1.2",
     "prisma": "^5.16.1",
-    "ts-node-dev": "^2.0.0",
+    "tsx": "^4.16.2",
     "typescript": "^5.5.3",
     "vite": "^5.3.4",
-    "vitest": "^1.6.0"
+    "vitest": "^4.1.2"
   }
 }

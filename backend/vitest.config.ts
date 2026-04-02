@@ -5,10 +5,7 @@ export default defineConfig({
     environment: 'node',
     include: ['src/test/**/*.test.ts'],
     // Run all test files sequentially in a single process to avoid DB conflicts
-    pool: 'forks',
-    poolOptions: {
-      forks: { singleFork: true },
-    },
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
