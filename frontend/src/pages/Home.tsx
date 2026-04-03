@@ -23,47 +23,41 @@ export default function Home() {
   const [locationError, setLocationError] = useState('');
   const [geoGranted, setGeoGranted] = useState<boolean | null>(null);
 
-  // On mount: only auto-request if permission is already granted.
-  // Calling getCurrentPosition without a user gesture on Safari caches a denial
-  // for the session, breaking subsequent button taps even with permission set to Allow.
   useEffect(() => {
     if (!navigator.geolocation) { setGeoGranted(false); return; }
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-        if (result.state === 'granted') {
-          requestLocation();
-        } else {
-          // 'prompt' or 'denied' — wait for user gesture
-          setGeoGranted(false);
-        }
-      }).catch(() => {
-        // Permissions API failed — show button, don't auto-request
-        setGeoGranted(false);
-      });
-    } else {
-      // Permissions API unavailable (old Safari) — show button, don't auto-request
-      setGeoGranted(false);
-    }
+    setGeoGranted(false);
   }, []);
 
   function requestLocation() {
     if (!navigator.geolocation) {
       setGeoGranted(false);
-      setLocationError('navigator.geolocation indisponível neste browser.');
+      setLocationError('❌ navigator.geolocation não existe neste browser.');
       return;
     }
     setGeoGranted(null);
-    setLocationError('');
+    setLocationError('⏳ Chamando getCurrentPosition...');
+
+    const permState = navigator.permissions
+      ? '(Permissions API disponível)'
+      : '(Permissions API indisponível)';
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGeoGranted(true);
+        setLocationError('');
         setFilters((f) => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
       },
       (err) => {
         setGeoGranted(false);
-        if (err.code === 1) {
-          setLocationError('Permissão bloqueada. No Safari: toque em "AA" na barra de endereços → Configurações do Site → Localização → Permitir.');
-        }
+        const labels: Record<number, string> = {
+          1: 'PERMISSION_DENIED',
+          2: 'POSITION_UNAVAILABLE',
+          3: 'TIMEOUT',
+        };
+        setLocationError(
+          `Erro ${err.code} — ${labels[err.code] ?? 'UNKNOWN'}: "${err.message}" ${permState}. ` +
+          `Verifique: Ajustes iOS → Privacidade → Serviços de Localização → Sites Safari → Ao Usar o App`
+        );
       },
       { timeout: 10000 },
     );
