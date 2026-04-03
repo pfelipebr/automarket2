@@ -25,7 +25,12 @@ export default function Home() {
 
   // Request geolocation on mount
   useEffect(() => {
+    requestLocation();
+  }, []);
+
+  function requestLocation() {
     if (!navigator.geolocation) { setGeoGranted(false); return; }
+    setGeoGranted(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGeoGranted(true);
@@ -34,8 +39,9 @@ export default function Home() {
       () => {
         setGeoGranted(false);
       },
+      { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false },
     );
-  }, []);
+  }
 
   async function handleCitySearch(e: React.FormEvent) {
     e.preventDefault();
@@ -85,34 +91,49 @@ export default function Home() {
         }}
       >
         {geoGranted === false ? (
-          <form onSubmit={handleCitySearch} style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
-            <input
-              type="text"
-              placeholder="Digite sua cidade (ex: São Paulo, SP)"
-              value={cityInput}
-              onChange={(e) => setCityInput(e.target.value)}
-              style={{
-                flex: 1,
-                background: '#273549',
-                border: '1px solid #334155',
-                borderRadius: '0.375rem',
-                color: '#f1f5f9',
-                padding: '0.5rem 0.75rem',
-                fontSize: '0.95rem',
-                outline: 'none',
-              }}
-            />
-            <button type="submit" className="btn btn-primary" disabled={geocodingCity}>
-              {geocodingCity ? 'Buscando...' : 'Usar local'}
-            </button>
-          </form>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <form onSubmit={handleCitySearch} style={{ display: 'flex', gap: '0.5rem' }}>
+              <input
+                type="text"
+                placeholder="Digite sua cidade (ex: São Paulo, SP)"
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: '#273549',
+                  border: '1px solid #334155',
+                  borderRadius: '0.375rem',
+                  color: '#f1f5f9',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                }}
+              />
+              <button type="submit" className="btn btn-primary" disabled={geocodingCity}>
+                {geocodingCity ? 'Buscando...' : 'Usar local'}
+              </button>
+            </form>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ color: '#64748b', fontSize: '0.8rem' }}>
+                Localização bloqueada pelo browser.
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={requestLocation}
+                style={{ fontSize: '0.8rem', padding: '0.2rem 0.6rem' }}
+              >
+                🔄 Tentar novamente
+              </button>
+            </div>
+          </div>
         ) : geoGranted === true ? (
           <span style={{ color: '#34d399', fontSize: '0.9rem' }}>
             📍 Localização detectada — mostrando veículos próximos a você
           </span>
         ) : (
           <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-            Detectando localização...
+            ⏳ Detectando localização...
           </span>
         )}
         {locationError && <span style={{ color: '#f87171', fontSize: '0.85rem' }}>{locationError}</span>}
