@@ -10,6 +10,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
+import { Transmission, Fuel } from '@prisma/client';
 import prisma from '../db';
 import { uploadFile } from '../storage';
 
@@ -459,8 +460,8 @@ async function main() {
           status:        Math.random() < 0.92 ? 'active' : (Math.random() < 0.5 ? 'paused' : 'sold'),
           features: {
             create: {
-              transmission,
-              fuel:           m.fuel,
+              transmission:   transmission as Transmission,
+              fuel:           m.fuel as Fuel,
               color,
               doors:          m.doors,
               ac:             yearFab >= 2018 || Math.random() < 0.85,
