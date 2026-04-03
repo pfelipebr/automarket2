@@ -10,16 +10,71 @@ interface Props {
   userLng?: number;
 }
 
+interface Cluster {
+  lat: number;
+  lng: number;
+  vehicles: Vehicle[];
+  minPrice: number;
+  maxPrice: number;
+}
+
+// Greedy distance-based clustering (~0.015 deg ≈ ~1.5 km)
+const CLUSTER_RADIUS = 0.015;
+
+function clusterVehicles(vehicles: Vehicle[]): Cluster[] {
+  const remaining = vehicles.filter((v) => v.lat != null && v.lng != null);
+  const clusters: Cluster[] = [];
+
+  while (remaining.length > 0) {
+    const seed = remaining.shift()!;
+    const members: Vehicle[] = [seed];
+
+    for (let i = remaining.length - 1; i >= 0; i--) {
+      const v = remaining[i];
+      const dlat = (v.lat ?? 0) - (seed.lat ?? 0);
+      const dlng = (v.lng ?? 0) - (seed.lng ?? 0);
+      if (Math.sqrt(dlat * dlat + dlng * dlng) <= CLUSTER_RADIUS) {
+        members.push(v);
+        remaining.splice(i, 1);
+      }
+    }
+
+    const lat = members.reduce((s, v) => s + (v.lat ?? 0), 0) / members.length;
+    const lng = members.reduce((s, v) => s + (v.lng ?? 0), 0) / members.length;
+    const prices = members.map((v) => v.price);
+
+    clusters.push({
+      lat,
+      lng,
+      vehicles: members,
+      minPrice: Math.min(...prices),
+      maxPrice: Math.max(...prices),
+    });
+  }
+
+  return clusters;
+}
+
 function formatPriceShort(price: number): string {
   if (price >= 1_000_000) return `R$${(price / 1_000_000).toFixed(1)}M`;
   if (price >= 1_000) return `R$${Math.round(price / 1_000)}mil`;
   return `R$${price}`;
 }
 
-function resolveImageUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.startsWith('http://minio-svc')) return url.replace('http://minio-svc', 'http://localhost');
-  return url;
+function clusterLabel(cluster: Cluster): string {
+  if (cluster.vehicles.length === 1) {
+    return formatPriceShort(cluster.minPrice);
+  }
+  const lo = formatPriceShort(cluster.minPrice);
+  const hi = formatPriceShort(cluster.maxPrice);
+  if (lo === hi) return `${lo} (${cluster.vehicles.length})`;
+  return `${lo} – ${hi}`;
+}
+
+function clusterSizeClass(count: number): string {
+  if (count === 1) return 'map-cluster-sm';
+  if (count <= 7) return 'map-cluster-md';
+  return 'map-cluster-lg';
 }
 
 // Recentraliza o mapa quando as coords mudam
@@ -29,33 +84,55 @@ function MapCenter({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-// Renderiza os marcadores via Leaflet puro (sem react-leaflet Marker) para usar divIcon customizado
-function Markers({ vehicles, onSelect }: { vehicles: Vehicle[]; onSelect: (v: Vehicle) => void }) {
+function ClusterMarkers({
+  vehicles,
+  onSelectVehicle,
+}: {
+  vehicles: Vehicle[];
+  onSelectVehicle: (v: Vehicle) => void;
+}) {
   const map = useMap();
   const markersRef = useRef<L.Marker[]>([]);
 
   useEffect(() => {
-    // Remove marcadores anteriores
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    vehicles.forEach((v) => {
-      if (v.lat == null || v.lng == null) return;
+    const clusters = clusterVehicles(vehicles);
+
+    clusters.forEach((cluster) => {
+      const sizeClass = clusterSizeClass(cluster.vehicles.length);
+      const label = clusterLabel(cluster);
+      const countBadge =
+        cluster.vehicles.length > 1
+          ? `<span class="map-cluster-count">${cluster.vehicles.length}</span>`
+          : '';
 
       const icon = L.divIcon({
         className: '',
-        html: `<div class="map-price-marker">${formatPriceShort(v.price)}</div>`,
+        html: `<div class="${sizeClass}">${label}${countBadge}</div>`,
         iconAnchor: [0, 0],
       });
 
-      const marker = L.marker([v.lat, v.lng], { icon })
-        .addTo(map)
-        .on('click', () => onSelect(v));
+      const marker = L.marker([cluster.lat, cluster.lng], { icon }).addTo(map);
+
+      if (cluster.vehicles.length === 1) {
+        marker.on('click', () => onSelectVehicle(cluster.vehicles[0]));
+      } else {
+        // Zoom into the cluster
+        marker.on('click', () => {
+          map.flyTo([cluster.lat, cluster.lng], Math.min(map.getZoom() + 2, 17), {
+            duration: 0.5,
+          });
+        });
+      }
 
       markersRef.current.push(marker);
     });
 
-    return () => { markersRef.current.forEach((m) => m.remove()); };
+    return () => {
+      markersRef.current.forEach((m) => m.remove());
+    };
   }, [vehicles, map]);
 
   return null;
@@ -81,22 +158,16 @@ export default function VehicleMapView({ vehicles, userLat, userLng }: Props) {
         />
 
         {userLat != null && userLng != null && (
-          <>
-            <MapCenter lat={userLat} lng={userLng} />
-            <Markers
-              vehicles={vehicles}
-              onSelect={(v) => navigate(`/vehicles/${v.id}`)}
-            />
-            {/* Marcador de posição do usuário */}
-            <UserMarker lat={userLat} lng={userLng} />
-          </>
+          <MapCenter lat={userLat} lng={userLng} />
         )}
 
-        {(userLat == null || userLng == null) && (
-          <Markers
-            vehicles={vehicles}
-            onSelect={(v) => navigate(`/vehicles/${v.id}`)}
-          />
+        <ClusterMarkers
+          vehicles={vehicles}
+          onSelectVehicle={(v) => navigate(`/vehicles/${v.id}`)}
+        />
+
+        {userLat != null && userLng != null && (
+          <UserMarker lat={userLat} lng={userLng} />
         )}
       </MapContainer>
 
@@ -116,7 +187,7 @@ export default function VehicleMapView({ vehicles, userLat, userLng }: Props) {
         zIndex: 1000,
         whiteSpace: 'nowrap',
       }}>
-        {vehicles.length} anúncios no mapa · toque no preço para ver detalhes
+        {vehicles.length} anúncios · bolha única = toque para zoom · 1 carro = toque para detalhes
       </div>
     </div>
   );

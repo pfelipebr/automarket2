@@ -208,10 +208,10 @@ export default function Home() {
         </button>
       </div>
 
-      <div className={`home-layout${mapView ? ' map-view-active' : ''}`}>
-        {/* Sidebar filters — hidden in map view */}
+      <div className="home-layout">
+        {/* Sidebar filters */}
         <aside
-          className={`filters-sidebar${filtersOpen ? ' open' : ''}${mapView ? ' map-hidden' : ''}`}
+          className={`filters-sidebar${filtersOpen ? ' open' : ''}`}
           style={{
             background: '#1e293b',
             border: '1px solid #334155',
