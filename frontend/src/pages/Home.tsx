@@ -29,15 +29,26 @@ export default function Home() {
   }, []);
 
   function requestLocation() {
-    if (!navigator.geolocation) { setGeoGranted(false); return; }
+    if (!navigator.geolocation) {
+      setGeoGranted(false);
+      setLocationError('navigator.geolocation indisponível neste browser.');
+      return;
+    }
     setGeoGranted(null);
+    setLocationError('');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setGeoGranted(true);
         setFilters((f) => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
       },
-      () => {
+      (err) => {
         setGeoGranted(false);
+        const msg: Record<number, string> = {
+          1: 'Permissão negada (código 1)',
+          2: 'Posição indisponível (código 2)',
+          3: 'Timeout (código 3)',
+        };
+        setLocationError(msg[err.code] ?? `Erro desconhecido (código ${err.code})`);
       },
       { timeout: 10000 },
     );
