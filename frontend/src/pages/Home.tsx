@@ -43,12 +43,9 @@ export default function Home() {
       },
       (err) => {
         setGeoGranted(false);
-        const msg: Record<number, string> = {
-          1: 'Permissão negada (código 1)',
-          2: 'Posição indisponível (código 2)',
-          3: 'Timeout (código 3)',
-        };
-        setLocationError(msg[err.code] ?? `Erro desconhecido (código ${err.code})`);
+        if (err.code === 1) {
+          setLocationError('Permissão bloqueada. No Safari: toque em "AA" na barra de endereços → Configurações do Site → Localização → Permitir.');
+        }
       },
       { timeout: 10000 },
     );
