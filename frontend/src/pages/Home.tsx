@@ -4,6 +4,7 @@ import { searchVehicles, geocodeCity } from '../api/client';
 import { useAuthStore } from '../store/auth';
 import VehicleCard from '../components/VehicleCard';
 import SearchFiltersPanel from '../components/SearchFilters';
+import VehicleMapView from '../components/VehicleMapView';
 import type { SearchFilters } from '../types';
 
 const SORT_OPTIONS = [
@@ -18,6 +19,7 @@ export default function Home() {
   const { user } = useAuthStore();
   const [filters, setFilters] = useState<SearchFilters>({ page: 1, limit: 20, sort: 'relevance', radius_km: 5 });
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mapView, setMapView] = useState(false);
   const [cityInput, setCityInput] = useState('');
   const [geocodingCity, setGeocodingCity] = useState(false);
   const [locationError, setLocationError] = useState('');
@@ -184,21 +186,32 @@ export default function Home() {
 
       </div>
 
-      {/* Filter toggle — visible only on mobile via CSS */}
-      <button
-        type="button"
-        className="btn btn-ghost filter-toggle-btn"
-        onClick={() => setFiltersOpen((o) => !o)}
-        style={{ marginBottom: '0.75rem', gap: '0.5rem' }}
-      >
-        <span>⚙</span>
-        {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
-      </button>
+      {/* Toolbar: filtros (mobile only) + visualizar mapa (always) */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <button
+          type="button"
+          className="btn btn-ghost filter-toggle-btn"
+          onClick={() => setFiltersOpen((o) => !o)}
+          style={{ gap: '0.5rem' }}
+        >
+          <span>⚙</span>
+          {filtersOpen ? 'Ocultar filtros' : 'Filtros'}
+        </button>
+        <button
+          type="button"
+          className={`btn ${mapView ? 'btn-primary' : 'btn-ghost'} map-toggle-btn`}
+          onClick={() => setMapView((v) => !v)}
+          style={{ gap: '0.5rem' }}
+        >
+          <span>🗺️</span>
+          {mapView ? 'Ver lista' : 'Visualizar no mapa'}
+        </button>
+      </div>
 
-      <div className="home-layout">
-        {/* Sidebar filters */}
+      <div className={`home-layout${mapView ? ' map-view-active' : ''}`}>
+        {/* Sidebar filters — hidden in map view */}
         <aside
-          className={`filters-sidebar${filtersOpen ? ' open' : ''}`}
+          className={`filters-sidebar${filtersOpen ? ' open' : ''}${mapView ? ' map-hidden' : ''}`}
           style={{
             background: '#1e293b',
             border: '1px solid #334155',
@@ -248,7 +261,7 @@ export default function Home() {
             </div>
           )}
 
-          {data && data.data.length > 0 && (
+          {data && data.data.length > 0 && !mapView && (
             <div className="vehicles-grid">
               {data.data.map((v) => (
                 <VehicleCard
@@ -261,8 +274,16 @@ export default function Home() {
             </div>
           )}
 
+          {data && data.data.length > 0 && mapView && (
+            <VehicleMapView
+              vehicles={data.data}
+              userLat={filters.lat}
+              userLng={filters.lng}
+            />
+          )}
+
           {/* Pagination */}
-          {totalPages > 1 && (
+          {totalPages > 1 && !mapView && (
             <div
               style={{
                 display: 'flex',
