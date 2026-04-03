@@ -23,9 +23,27 @@ export default function Home() {
   const [locationError, setLocationError] = useState('');
   const [geoGranted, setGeoGranted] = useState<boolean | null>(null);
 
-  // Request geolocation on mount
+  // On mount: only auto-request if permission is already granted.
+  // Calling getCurrentPosition without a user gesture on Safari caches a denial
+  // for the session, breaking subsequent button taps even with permission set to Allow.
   useEffect(() => {
-    requestLocation();
+    if (!navigator.geolocation) { setGeoGranted(false); return; }
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+        if (result.state === 'granted') {
+          requestLocation();
+        } else {
+          // 'prompt' or 'denied' — wait for user gesture
+          setGeoGranted(false);
+        }
+      }).catch(() => {
+        // Permissions API failed — show button, don't auto-request
+        setGeoGranted(false);
+      });
+    } else {
+      // Permissions API unavailable (old Safari) — show button, don't auto-request
+      setGeoGranted(false);
+    }
   }, []);
 
   function requestLocation() {
