@@ -70,9 +70,10 @@ export default function VehicleDetail() {
         ← Voltar aos resultados
       </Link>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.5rem', alignItems: 'start' }}>
-        {/* Left: gallery + info */}
-        <div>
+      <div className="detail-layout">
+
+        {/* ── Seção 1: galeria + título ── */}
+        <div className="detail-main-top">
           {/* Gallery */}
           <div style={{ background: '#0f172a', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '0.75rem', position: 'relative' }}>
             {currentImage ? (
@@ -108,14 +109,9 @@ export default function VehicleDetail() {
                   key={img.id}
                   onClick={() => setImgIndex(i)}
                   style={{
-                    flexShrink: 0,
-                    width: '72px',
-                    height: '54px',
+                    flexShrink: 0, width: '72px', height: '54px',
                     border: i === imgIndex ? '2px solid #38bdf8' : '2px solid #334155',
-                    borderRadius: '0.375rem',
-                    overflow: 'hidden',
-                    padding: 0,
-                    cursor: 'pointer',
+                    borderRadius: '0.375rem', overflow: 'hidden', padding: 0, cursor: 'pointer',
                   }}
                 >
                   <img src={resolveUrl(img.url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -124,8 +120,8 @@ export default function VehicleDetail() {
             </div>
           )}
 
-          {/* Title & price */}
-          <div style={{ marginBottom: '1rem' }}>
+          {/* Title block */}
+          <div style={{ marginBottom: '0.5rem' }}>
             <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem' }}>
               {vehicle.brand} · <span className={`badge badge-${vehicle.condition}`}>{conditionLabel[vehicle.condition]}</span>
             </div>
@@ -136,8 +132,53 @@ export default function VehicleDetail() {
               {vehicle.year_fab}/{vehicle.year_model} · {vehicle.mileage_km.toLocaleString('pt-BR')} km · {vehicle.neighborhood ? `${vehicle.neighborhood}, ` : ''}{vehicle.city}, {vehicle.state}
             </div>
           </div>
+        </div>
 
-          {/* Attributes table */}
+        {/* ── Seção 2: preço + anunciante (sidebar) ── */}
+        <div className="detail-sidebar">
+          <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#38bdf8', marginBottom: '0.5rem' }}>
+              {formatPrice(vehicle.price)}
+            </div>
+            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.25rem' }}>
+              {vehicle.neighborhood ? `${vehicle.neighborhood}, ` : ''}{vehicle.city}, {vehicle.state}
+            </div>
+            <button
+              onClick={handleFavorite}
+              disabled={favMutation.isPending}
+              className="btn btn-ghost"
+              style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem' }}
+            >
+              {favorited ? '❤️ Favoritado' : '🤍 Favoritar'}
+            </button>
+            {vehicle.user?.phone && (
+              <a
+                href={`https://wa.me/55${vehicle.user.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá, tenho interesse no ${vehicle.brand} ${vehicle.model} ${vehicle.year_fab}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-primary"
+                style={{ width: '100%', justifyContent: 'center', textDecoration: 'none', display: 'flex' }}
+              >
+                💬 WhatsApp
+              </a>
+            )}
+          </div>
+
+          {vehicle.user && (
+            <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem', padding: '1rem' }}>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
+                Anunciante
+              </h3>
+              <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{vehicle.user.name}</div>
+              {vehicle.user.phone && (
+                <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>{vehicle.user.phone}</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Seção 3: características + descrição + mapa ── */}
+        <div className="detail-main-bottom">
           {vehicle.features && (
             <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem' }}>
               <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.75rem' }}>Características</h2>
@@ -161,7 +202,6 @@ export default function VehicleDetail() {
             </div>
           )}
 
-          {/* Description */}
           {vehicle.description && (
             <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem' }}>
               <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.5rem' }}>Descrição</h2>
@@ -169,7 +209,6 @@ export default function VehicleDetail() {
             </div>
           )}
 
-          {/* Map */}
           {vehicle.lat !== undefined && vehicle.lng !== undefined && (
             <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
               <div style={{ padding: '1rem 1rem 0' }}>
@@ -193,51 +232,6 @@ export default function VehicleDetail() {
           )}
         </div>
 
-        {/* Right: price card + seller */}
-        <div style={{ position: 'sticky', top: '72px' }}>
-          <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem', padding: '1.25rem', marginBottom: '1rem' }}>
-            <div style={{ fontSize: '2rem', fontWeight: 900, color: '#38bdf8', marginBottom: '0.5rem' }}>
-              {formatPrice(vehicle.price)}
-            </div>
-            <div style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.25rem' }}>
-              {vehicle.neighborhood ? `${vehicle.neighborhood}, ` : ''}{vehicle.city}, {vehicle.state}
-            </div>
-
-            <button
-              onClick={handleFavorite}
-              disabled={favMutation.isPending}
-              className="btn btn-ghost"
-              style={{ width: '100%', justifyContent: 'center', marginBottom: '0.75rem' }}
-            >
-              {favorited ? '❤️ Favoritado' : '🤍 Favoritar'}
-            </button>
-
-            {vehicle.user?.phone && (
-              <a
-                href={`https://wa.me/55${vehicle.user.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Olá, tenho interesse no ${vehicle.brand} ${vehicle.model} ${vehicle.year_fab}`)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-primary"
-                style={{ width: '100%', justifyContent: 'center', textDecoration: 'none', display: 'flex' }}
-              >
-                💬 WhatsApp
-              </a>
-            )}
-          </div>
-
-          {/* Seller card */}
-          {vehicle.user && (
-            <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem', padding: '1rem' }}>
-              <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-                Anunciante
-              </h3>
-              <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{vehicle.user.name}</div>
-              {vehicle.user.phone && (
-                <div style={{ color: '#94a3b8', fontSize: '0.875rem' }}>{vehicle.user.phone}</div>
-              )}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
