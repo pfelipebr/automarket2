@@ -39,7 +39,7 @@ export default function Home() {
       () => {
         setGeoGranted(false);
       },
-      { timeout: 10000, maximumAge: 60000, enableHighAccuracy: false },
+      { timeout: 10000 },
     );
   }
 
