@@ -97,37 +97,19 @@ export default function Home() {
   return (
     <div className="page-container">
       {/* Location bar */}
-      <div
-        style={{
-          background: '#1e293b',
-          border: '1px solid #334155',
-          borderRadius: '0.75rem',
-          padding: '1rem',
-          marginBottom: '1.25rem',
-          display: 'flex',
-          gap: '1rem',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-        }}
-      >
-        {geoGranted === true ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-            <span style={{ color: '#34d399', fontSize: '0.9rem' }}>
-              📍 Localização detectada — mostrando veículos próximos a você
-            </span>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={requestLocation}
-              style={{ fontSize: '0.8rem', padding: '0.2rem 0.6rem', whiteSpace: 'nowrap' }}
-            >
-              🔄 Atualizar
-            </button>
-          </div>
-        ) : (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {/* Botão de localização automática — funciona como gesto do usuário no Safari */}
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div className="location-bar">
+
+        {/* Linha 1: status / botão de localização */}
+        <div className="location-status">
+          {geoGranted === true ? (
+            <>
+              <span style={{ color: '#34d399', fontSize: '0.9rem' }}>
+                📍 Localização detectada — mostrando veículos próximos a você
+              </span>
+              {locationError && <span style={{ color: '#f87171', fontSize: '0.8rem' }}>{locationError}</span>}
+            </>
+          ) : (
+            <>
               <button
                 type="button"
                 className="btn btn-primary"
@@ -137,51 +119,69 @@ export default function Home() {
               >
                 {geoGranted === null ? '⏳ Detectando...' : '📍 Usar minha localização'}
               </button>
-              <span style={{ color: '#64748b', fontSize: '0.85rem' }}>ou</span>
-              <form onSubmit={handleCitySearch} style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
-                <input
-                  type="text"
-                  placeholder="Digite sua cidade (ex: São Paulo, SP)"
-                  value={cityInput}
-                  onChange={(e) => setCityInput(e.target.value)}
-                  style={{
-                    flex: 1,
-                    background: '#273549',
-                    border: '1px solid #334155',
-                    borderRadius: '0.375rem',
-                    color: '#f1f5f9',
-                    padding: '0.5rem 0.75rem',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                  }}
-                />
-                <button type="submit" className="btn btn-ghost" disabled={geocodingCity}>
-                  {geocodingCity ? '...' : 'Buscar'}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-        {locationError && <span style={{ color: '#f87171', fontSize: '0.85rem' }}>{locationError}</span>}
+              {locationError && <span style={{ color: '#f87171', fontSize: '0.8rem' }}>{locationError}</span>}
+            </>
+          )}
+        </div>
 
-        {/* Sort */}
-        <select
-          value={filters.sort ?? 'relevance'}
-          onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as SearchFilters['sort'], page: 1 }))}
-          style={{
-            background: '#273549',
-            border: '1px solid #334155',
-            borderRadius: '0.375rem',
-            color: '#f1f5f9',
-            padding: '0.45rem 0.65rem',
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-          }}
-        >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        {/* Linha 2: atualizar (se localização ativa) ou campo de cidade */}
+        <div className="location-actions">
+          {geoGranted === true ? (
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={requestLocation}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              🔄 Atualizar
+            </button>
+          ) : (
+            <form onSubmit={handleCitySearch} style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
+              <input
+                type="text"
+                placeholder="ou digite sua cidade (ex: São Paulo, SP)"
+                value={cityInput}
+                onChange={(e) => setCityInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: '#273549',
+                  border: '1px solid #334155',
+                  borderRadius: '0.375rem',
+                  color: '#f1f5f9',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.875rem',
+                  outline: 'none',
+                }}
+              />
+              <button type="submit" className="btn btn-ghost" disabled={geocodingCity}>
+                {geocodingCity ? '...' : 'Buscar'}
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Linha 3: ordenação */}
+        <div className="location-sort">
+          <select
+            value={filters.sort ?? 'relevance'}
+            onChange={(e) => setFilters((f) => ({ ...f, sort: e.target.value as SearchFilters['sort'], page: 1 }))}
+            style={{
+              background: '#273549',
+              border: '1px solid #334155',
+              borderRadius: '0.375rem',
+              color: '#f1f5f9',
+              padding: '0.45rem 0.65rem',
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+              width: '100%',
+            }}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+
       </div>
 
       {/* Filter toggle — visible only on mobile via CSS */}
