@@ -279,6 +279,9 @@ export default function Home() {
               vehicles={data.data}
               userLat={filters.lat}
               userLng={filters.lng}
+              onSearchArea={(lat, lng) =>
+                setFilters((f) => ({ ...f, lat, lng, page: 1 }))
+              }
             />
           )}
 
