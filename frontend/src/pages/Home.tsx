@@ -48,6 +48,7 @@ export default function Home() {
         setGeoGranted(true);
         setLocationError('');
         setFilters((f) => ({ ...f, lat: pos.coords.latitude, lng: pos.coords.longitude }));
+        setMapView(true);
       },
       (err) => {
         setGeoGranted(false);
