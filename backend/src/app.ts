@@ -11,6 +11,8 @@ import authRoutes from './routes/auth';
 import vehicleRoutes from './routes/vehicles';
 import favoriteRoutes from './routes/favorites';
 import meRoutes from './routes/me';
+import adminRoutes from './routes/admin';
+import { isFailureActive, failureState } from './failureState';
 import prisma from './db';
 
 export async function createApp(opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
@@ -50,6 +52,18 @@ export async function createApp(opts: { logger?: boolean } = {}): Promise<Fastif
 
   await app.register(authPlugin);
 
+  // Failure simulation: return 503 on all non-admin/health routes when active
+  app.addHook('preHandler', async (req, reply) => {
+    const path = req.url.split('?')[0];
+    if (path.startsWith('/admin') || path === '/health' || path === '/ready') return;
+    if (isFailureActive()) {
+      return reply.code(503).send({
+        error: 'Service Unavailable',
+        reason: failureState.reason || 'Simulated failure',
+      });
+    }
+  });
+
   app.get('/health', async () => ({ status: 'ok', service: 'automarket-backend' }));
   app.get('/ready', async (_req, reply) => {
     try {
@@ -64,6 +78,7 @@ export async function createApp(opts: { logger?: boolean } = {}): Promise<Fastif
   await app.register(vehicleRoutes, { prefix: '/vehicles' });
   await app.register(favoriteRoutes, { prefix: '/favorites' });
   await app.register(meRoutes, { prefix: '/me' });
+  await app.register(adminRoutes, { prefix: '/admin' });
 
   return app;
 }

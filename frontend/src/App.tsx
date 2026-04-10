@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import Favorites from './pages/Favorites';
 import MyAds from './pages/MyAds';
 import CreateVehicle from './pages/CreateVehicle';
+import Admin from './pages/Admin';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, initialized } = useAuthStore();
@@ -65,6 +66,7 @@ export default function App() {
             path="/vehicles/:id/edit"
             element={<RequireAuth><CreateVehicle /></RequireAuth>}
           />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

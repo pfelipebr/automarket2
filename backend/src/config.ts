@@ -17,4 +17,5 @@ export const config = {
     bucket: process.env.MINIO_BUCKET ?? 'automarket-images',
   },
   geocodingProvider: process.env.GEOCODING_PROVIDER ?? 'nominatim',
+  adminSecret: process.env.ADMIN_SECRET ?? 'admin-dev-secret',
 };
