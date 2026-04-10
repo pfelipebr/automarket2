@@ -59,7 +59,7 @@ spec:
                 name: backend-svc
                 port:
                   number: 3000
-          - path: /()(admin/.+)
+          - path: /()(admin-api.*)
             pathType: ImplementationSpecific
             backend:
               service:

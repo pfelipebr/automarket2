@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-const API = '/admin';
+const API = '/admin-api';
 
 interface Status {
   db: { users: number; vehicles: number; favorites: number };

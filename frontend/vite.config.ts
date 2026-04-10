@@ -11,7 +11,7 @@ export default defineConfig({
       '/me': 'http://localhost:3000',
       '/health': 'http://localhost:3000',
       '/ready': 'http://localhost:3000',
-      '/admin': 'http://localhost:3000',
+      '/admin-api': 'http://localhost:3000',
     },
   },
   test: {

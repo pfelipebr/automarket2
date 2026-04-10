@@ -55,7 +55,7 @@ export async function createApp(opts: { logger?: boolean } = {}): Promise<Fastif
   // Failure simulation: return 503 on all non-admin/health routes when active
   app.addHook('preHandler', async (req, reply) => {
     const path = req.url.split('?')[0];
-    if (path.startsWith('/admin') || path === '/health' || path === '/ready') return;
+    if (path.startsWith('/admin-api') || path === '/health' || path === '/ready') return;
     if (isFailureActive()) {
       return reply.code(503).send({
         error: 'Service Unavailable',
@@ -78,7 +78,7 @@ export async function createApp(opts: { logger?: boolean } = {}): Promise<Fastif
   await app.register(vehicleRoutes, { prefix: '/vehicles' });
   await app.register(favoriteRoutes, { prefix: '/favorites' });
   await app.register(meRoutes, { prefix: '/me' });
-  await app.register(adminRoutes, { prefix: '/admin' });
+  await app.register(adminRoutes, { prefix: '/admin-api' });
 
   return app;
 }
