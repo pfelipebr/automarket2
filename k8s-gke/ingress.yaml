@@ -59,6 +59,13 @@ spec:
                 name: backend-svc
                 port:
                   number: 3000
+          - path: /()(admin.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: backend-svc
+                port:
+                  number: 3000
           # Frontend SPA fallback
           - path: /()(.*)
             pathType: ImplementationSpecific
