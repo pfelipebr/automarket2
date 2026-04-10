@@ -12,7 +12,7 @@ import vehicleRoutes from './routes/vehicles';
 import favoriteRoutes from './routes/favorites';
 import meRoutes from './routes/me';
 import adminRoutes from './routes/admin';
-import { isFailureActive, failureState } from './failureState';
+import { getFailureState } from './failureState';
 import prisma from './db';
 
 export async function createApp(opts: { logger?: boolean } = {}): Promise<FastifyInstance> {
@@ -52,14 +52,18 @@ export async function createApp(opts: { logger?: boolean } = {}): Promise<Fastif
 
   await app.register(authPlugin);
 
-  // Failure simulation: return 503 on all non-admin/health routes when active
+  // Failure simulation: intermittently fail vehicle search requests
   app.addHook('preHandler', async (req, reply) => {
-    const path = req.url.split('?')[0];
-    if (path.startsWith('/admin-api') || path === '/health' || path === '/ready') return;
-    if (isFailureActive()) {
+    if (req.method !== 'GET') return;
+    if (req.url.split('?')[0] !== '/vehicles') return;
+
+    const state = await getFailureState();
+    if (!state) return;
+
+    if (Math.random() < state.failureRate) {
       return reply.code(503).send({
         error: 'Service Unavailable',
-        reason: failureState.reason || 'Simulated failure',
+        reason: state.reason || 'Simulated failure',
       });
     }
   });

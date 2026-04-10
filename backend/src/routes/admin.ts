@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { Transmission, Fuel } from '@prisma/client';
 import prisma from '../db';
 import { config } from '../config';
-import { failureState, isFailureActive } from '../failureState';
+import { getFailureState, setFailureState, clearFailureState } from '../failureState';
 
 // ─── Sample data ─────────────────────────────────────────────────────────────
 
@@ -65,12 +65,14 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       prisma.favorite.count(),
     ]);
 
+    const failure = await getFailureState();
     return {
       db: { users: userCount, vehicles: vehicleCount, favorites: favoriteCount },
       failure: {
-        active: isFailureActive(),
-        until: failureState.failUntil,
-        reason: failureState.reason,
+        active: !!failure,
+        until: failure?.failUntil ?? null,
+        reason: failure?.reason ?? '',
+        failureRate: failure?.failureRate ?? 0,
       },
     };
   });
@@ -220,18 +222,19 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
     const bodySchema = z.object({
       duration_seconds: z.number().int().min(5).max(300).default(30),
+      failure_rate: z.number().min(0.1).max(1.0).default(0.5),
       reason: z.string().max(120).default('Simulated failure triggered from admin panel'),
     });
-    const { duration_seconds, reason } = bodySchema.parse(req.body ?? {});
+    const { duration_seconds, failure_rate, reason } = bodySchema.parse(req.body ?? {});
 
     const until = new Date(Date.now() + duration_seconds * 1000);
-    failureState.failUntil = until;
-    failureState.reason = reason;
+    await setFailureState({ failUntil: until.toISOString(), reason, failureRate: failure_rate });
 
     return {
       ok: true,
       failUntil: until,
       duration_seconds,
+      failure_rate,
       reason,
     };
   });
@@ -240,8 +243,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete('/simulate-failure', async (req, reply) => {
     if (!guardAdmin(req)) return reply.code(401).send({ error: 'Unauthorized' });
 
-    failureState.failUntil = null;
-    failureState.reason = '';
+    await clearFailureState();
 
     return { ok: true, message: 'Failure simulation cleared' };
   });

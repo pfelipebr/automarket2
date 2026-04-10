@@ -4,7 +4,7 @@ const API = '/admin-api';
 
 interface Status {
   db: { users: number; vehicles: number; favorites: number };
-  failure: { active: boolean; until: string | null; reason: string };
+  failure: { active: boolean; until: string | null; reason: string; failureRate: number };
 }
 
 interface LoadResult {
@@ -89,6 +89,7 @@ export default function Admin() {
 
   // Failure state
   const [failDuration, setFailDuration] = useState(30);
+  const [failRate, setFailRate] = useState(50);
   const [failReason, setFailReason] = useState('Simulated failure triggered from admin panel');
   const [failing, setFailing] = useState(false);
   const [failMsg, setFailMsg] = useState('');
@@ -180,7 +181,7 @@ export default function Admin() {
     try {
       const data = await adminFetch('/simulate-failure', {
         method: 'POST',
-        body: JSON.stringify({ duration_seconds: failDuration, reason: failReason }),
+        body: JSON.stringify({ duration_seconds: failDuration, failure_rate: failRate / 100, reason: failReason }),
       });
       setFailMsg(`Failure active until ${new Date(data.failUntil).toLocaleTimeString()}`);
       await refreshStatus();
@@ -314,7 +315,7 @@ export default function Admin() {
           </span>
           {status.failure.active && (
             <span style={{ color: '#f87171' }}>
-              Failure until:{' '}
+              Failure {Math.round(status.failure.failureRate * 100)}% until{' '}
               <strong>{new Date(status.failure.until!).toLocaleTimeString()}</strong>
               {' — '}{status.failure.reason}
             </span>
@@ -488,18 +489,32 @@ export default function Admin() {
         {/* 4. Simulate Failure */}
         <Card title="Simulate Failure" icon="💥" color="#c084fc">
           <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
-            Make the API return 503 on all non-admin routes for a set duration.
-            Health and readiness probes remain unaffected.
+            Intermittently fail vehicle search requests at the configured rate.
+            Other routes and health probes are unaffected.
           </p>
-          <div className="field" style={{ margin: 0 }}>
-            <label>Duration (seconds)</label>
-            <input
-              type="number"
-              min={5}
-              max={300}
-              value={failDuration}
-              onChange={(e) => setFailDuration(Number(e.target.value))}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Duration (seconds)</label>
+              <input
+                type="number"
+                min={5}
+                max={300}
+                value={failDuration}
+                onChange={(e) => setFailDuration(Number(e.target.value))}
+              />
+            </div>
+            <div className="field" style={{ margin: 0 }}>
+              <label>Failure rate: {failRate}%</label>
+              <input
+                type="range"
+                min={10}
+                max={100}
+                step={10}
+                value={failRate}
+                onChange={(e) => setFailRate(Number(e.target.value))}
+                style={{ marginTop: '0.5rem' }}
+              />
+            </div>
           </div>
           <div className="field" style={{ margin: 0 }}>
             <label>Reason</label>
