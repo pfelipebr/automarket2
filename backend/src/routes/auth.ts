@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import prisma from '../db';
 import { config } from '../config';
+import { withSpan } from '../telemetry';
 
 const BCRYPT_ROUNDS = 10;
 
@@ -34,7 +35,8 @@ async function issueRefreshToken(userId: string): Promise<string> {
 
 const authRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /auth/register
-  fastify.post('/register', async (req, reply) => {
+  fastify.post('/register', async (req, reply) =>
+    withSpan('auth.register', {}, async (span) => {
     const schema = z.object({
       name: z.string().min(2),
       email: z.string().email(),
@@ -44,7 +46,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     const body = schema.parse(req.body);
 
     const exists = await prisma.user.findUnique({ where: { email: body.email } });
-    if (exists) return reply.code(409).send({ error: 'Email já cadastrado' });
+    if (exists) {
+      span.setAttribute('auth.result', 'email_conflict');
+      return reply.code(409).send({ error: 'Email já cadastrado' });
+    }
 
     const password_hash = await bcrypt.hash(body.password, BCRYPT_ROUNDS);
     const user = await prisma.user.create({
@@ -55,6 +60,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     const access_token = issueAccessToken(user.id, user.email);
     const refresh_token = await issueRefreshToken(user.id);
 
+    span.setAttributes({ 'auth.result': 'success', 'user.id': user.id });
     reply.setCookie('refresh_token', refresh_token, {
       httpOnly: true,
       path: '/auth/refresh',
@@ -62,10 +68,11 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       sameSite: 'lax',
     });
     return reply.code(201).send({ user, access_token });
-  });
+  }));
 
   // POST /auth/login
-  fastify.post('/login', async (req, reply) => {
+  fastify.post('/login', async (req, reply) =>
+    withSpan('auth.login', {}, async (span) => {
     const schema = z.object({
       email: z.string().email(),
       password: z.string(),
@@ -73,14 +80,21 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
     const body = schema.parse(req.body);
 
     const user = await prisma.user.findUnique({ where: { email: body.email } });
-    if (!user) return reply.code(401).send({ error: 'Credenciais inválidas' });
+    if (!user) {
+      span.setAttribute('auth.result', 'user_not_found');
+      return reply.code(401).send({ error: 'Credenciais inválidas' });
+    }
 
     const valid = await bcrypt.compare(body.password, user.password_hash);
-    if (!valid) return reply.code(401).send({ error: 'Credenciais inválidas' });
+    if (!valid) {
+      span.setAttribute('auth.result', 'invalid_password');
+      return reply.code(401).send({ error: 'Credenciais inválidas' });
+    }
 
     const access_token = issueAccessToken(user.id, user.email);
     const refresh_token = await issueRefreshToken(user.id);
 
+    span.setAttributes({ 'auth.result': 'success', 'user.id': user.id });
     reply.setCookie('refresh_token', refresh_token, {
       httpOnly: true,
       path: '/auth/refresh',
@@ -91,7 +105,7 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
       user: { id: user.id, name: user.name, email: user.email, phone: user.phone },
       access_token,
     };
-  });
+  }));
 
   // POST /auth/refresh
   fastify.post('/refresh', async (req, reply) => {

@@ -4,10 +4,11 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import prisma from '../db';
 import { uploadFile, deleteFile } from '../storage';
+import { withSpan, setSpanAttrs } from '../telemetry';
 
 const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /vehicles
-  fastify.get('/', async (req) => {
+  fastify.get('/', async (req) => withSpan('vehicles.search', {}, async (span) => {
     const querySchema = z.object({
       lat: z.coerce.number().optional(),
       lng: z.coerce.number().optional(),
@@ -31,6 +32,19 @@ const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
     });
     const q = querySchema.parse(req.query);
     const offset = (q.page - 1) * q.limit;
+
+    span.setAttributes({
+      'search.geo': q.lat !== undefined,
+      'search.sort': q.sort,
+      'search.page': q.page,
+      'search.limit': q.limit,
+      'search.radius_km': q.radius_km,
+      'search.filters.brand': q.brand ?? '',
+      'search.filters.model': q.model ?? '',
+      'search.filters.condition': q.condition ?? '',
+      'search.filters.fuel': q.fuel ?? '',
+      'search.filters.transmission': q.transmission ?? '',
+    });
 
     if (q.lat !== undefined && q.lng !== undefined) {
       const radiusMeters = q.radius_km * 1000;
@@ -95,6 +109,7 @@ const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
       `;
       const total = Number(countRows[0].count);
 
+      span.setAttribute('search.result_total', total);
       return {
         data: rows.map((r) => ({
           id: r.id,
@@ -143,7 +158,7 @@ const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
       nearest: { created_at: 'desc' },
     };
 
-    const [vehicles, total] = await Promise.all([
+    const [vehicles, total] = await Promise.all([  // non-geo branch
       prisma.vehicle.findMany({
         where,
         orderBy: orderByMap[q.sort],
@@ -154,6 +169,7 @@ const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
       prisma.vehicle.count({ where }),
     ]);
 
+    span.setAttribute('search.result_total', total);
     return {
       data: vehicles.map((v) => ({
         id: v.id,
@@ -175,11 +191,12 @@ const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
       })),
       meta: { total, page: q.page, limit: q.limit, total_pages: Math.ceil(total / q.limit) },
     };
-  });
+  }));
 
   // GET /vehicles/:id
   fastify.get('/:id', async (req, reply) => {
     const { id } = req.params as { id: string };
+    return withSpan('vehicles.get', { 'vehicle.id': id }, async (span) => {
     const vehicle = await prisma.vehicle.findUnique({
       where: { id },
       include: {
@@ -188,12 +205,18 @@ const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
         user: { select: { id: true, name: true, phone: true } },
       },
     });
-    if (!vehicle) return reply.code(404).send({ error: 'Veículo não encontrado' });
+    if (!vehicle) {
+      span.setAttribute('vehicle.found', false);
+      return reply.code(404).send({ error: 'Veículo não encontrado' });
+    }
+    span.setAttributes({ 'vehicle.found': true, 'vehicle.brand': vehicle.brand, 'vehicle.model': vehicle.model });
     return { ...vehicle, price: Number(vehicle.price) };
+    });
   });
 
   // POST /vehicles 🔒
-  fastify.post('/', { preHandler: [fastify.authenticate] }, async (req, reply) => {
+  fastify.post('/', { preHandler: [fastify.authenticate] }, async (req, reply) =>
+    withSpan('vehicles.create', { 'user.id': req.user.id }, async (span) => {
     const schema = z.object({
       brand: z.string(),
       model: z.string(),
@@ -244,8 +267,9 @@ const vehicleRoutes: FastifyPluginAsync = async (fastify) => {
       },
       include: { features: true },
     });
+    span.setAttributes({ 'vehicle.id': vehicle.id, 'vehicle.brand': body.brand, 'vehicle.model': body.model });
     return reply.code(201).send({ ...vehicle, price: Number(vehicle.price) });
-  });
+  }));
 
   // PATCH /vehicles/:id 🔒
   fastify.patch('/:id', { preHandler: [fastify.authenticate] }, async (req, reply) => {
