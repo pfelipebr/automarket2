@@ -1,3 +1,4 @@
+import './tracing'; // must be first — registers OTel instrumentation before any other import
 import { createApp } from './app';
 import { config } from './config';
 

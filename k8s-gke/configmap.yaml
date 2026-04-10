@@ -17,3 +17,4 @@ data:
   MINIO_PUBLIC_URL: "https://demo.aidevcowork.com/minio"
   GEOCODING_PROVIDER: "nominatim"
   NOMINATIM_BASE_URL: "https://nominatim.openstreetmap.org"
+  OTEL_SERVICE_NAME: "automarket-backend"
