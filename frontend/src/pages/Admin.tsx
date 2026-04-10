@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 const API = '/admin-api';
 
@@ -471,12 +471,12 @@ export default function Admin() {
               <span style={{ color: '#94a3b8' }}>Throughput</span>
               <span style={{ color: '#facc15', fontWeight: 700 }}>{loadResult.rps} req/s</span>
               {Object.entries(loadResult.status_codes ?? {}).map(([code, count]) => (
-                <>
+                <React.Fragment key={code}>
                   <span style={{ color: '#94a3b8' }}>HTTP {code}</span>
                   <span style={{ color: code === '200' ? '#4ade80' : '#f87171', fontWeight: 700 }}>
                     {count}x
                   </span>
-                </>
+                </React.Fragment>
               ))}
             </div>
           )}
