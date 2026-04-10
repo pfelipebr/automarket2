@@ -173,22 +173,34 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
     });
     const { requests, concurrency } = bodySchema.parse(req.body ?? {});
 
+    // Realistic search scenarios that mimic real user traffic
+    const BASE_URL = `http://localhost:${config.port}`;
+    const SCENARIOS = [
+      () => `${BASE_URL}/vehicles?limit=20&sort=newest&page=${rnd(1, 5)}`,
+      () => `${BASE_URL}/vehicles?limit=20&sort=price_asc`,
+      () => `${BASE_URL}/vehicles?limit=20&sort=price_desc`,
+      () => `${BASE_URL}/vehicles?brand=${pick(['Chevrolet','Hyundai','Volkswagen','Fiat','Toyota'])}&limit=20`,
+      () => `${BASE_URL}/vehicles?min_price=${rnd(50,100) * 1000}&max_price=${rnd(150,300) * 1000}&limit=20`,
+      () => `${BASE_URL}/vehicles?fuel=${pick(['flex','diesel','hybrid','electric'])}&limit=20`,
+      () => `${BASE_URL}/vehicles?condition=${pick(['new','used','certified'])}&limit=20`,
+      () => `${BASE_URL}/vehicles?lat=-23.5505&lng=-46.6333&radius_km=${rnd(5,50)}&limit=20`,
+      () => `${BASE_URL}/vehicles?transmission=${pick(['manual','automatic','cvt'])}&limit=20`,
+      () => `${BASE_URL}/vehicles?year_from=${rnd(2015,2020)}&year_to=${rnd(2021,2024)}&limit=20`,
+    ];
+
     const start = Date.now();
     let completed = 0;
     let errors = 0;
+    const statusCodes: Record<number, number> = {};
 
-    // Run concurrent Prisma queries in batches to simulate DB load
     const runBatch = async (size: number) => {
       const tasks = Array.from({ length: size }, async () => {
+        const url = pick(SCENARIOS)();
         try {
-          await prisma.vehicle.findMany({
-            where: { status: 'active' },
-            take: 20,
-            skip: rnd(0, 10),
-            include: { features: true, images: { take: 1 } },
-            orderBy: { created_at: 'desc' },
-          });
-          completed++;
+          const res = await fetch(url);
+          statusCodes[res.status] = (statusCodes[res.status] ?? 0) + 1;
+          if (res.ok) completed++;
+          else errors++;
         } catch {
           errors++;
         }
@@ -196,13 +208,9 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       await Promise.all(tasks);
     };
 
-    const remaining = requests;
-    const fullBatches = Math.floor(remaining / concurrency);
-    const lastBatch = remaining % concurrency;
-
-    for (let i = 0; i < fullBatches; i++) {
-      await runBatch(concurrency);
-    }
+    const fullBatches = Math.floor(requests / concurrency);
+    const lastBatch = requests % concurrency;
+    for (let i = 0; i < fullBatches; i++) await runBatch(concurrency);
     if (lastBatch > 0) await runBatch(lastBatch);
 
     const elapsed = Date.now() - start;
@@ -211,6 +219,7 @@ const adminRoutes: FastifyPluginAsync = async (fastify) => {
       requests,
       completed,
       errors,
+      status_codes: statusCodes,
       elapsed_ms: elapsed,
       rps: Math.round((completed / elapsed) * 1000),
     };

@@ -11,6 +11,7 @@ interface LoadResult {
   requests: number;
   completed: number;
   errors: number;
+  status_codes: Record<string, number>;
   elapsed_ms: number;
   rps: number;
 }
@@ -469,6 +470,14 @@ export default function Admin() {
               <span style={{ color: '#e2e8f0', fontWeight: 700 }}>{loadResult.elapsed_ms} ms</span>
               <span style={{ color: '#94a3b8' }}>Throughput</span>
               <span style={{ color: '#facc15', fontWeight: 700 }}>{loadResult.rps} req/s</span>
+              {Object.entries(loadResult.status_codes ?? {}).map(([code, count]) => (
+                <>
+                  <span style={{ color: '#94a3b8' }}>HTTP {code}</span>
+                  <span style={{ color: code === '200' ? '#4ade80' : '#f87171', fontWeight: 700 }}>
+                    {count}x
+                  </span>
+                </>
+              ))}
             </div>
           )}
           <button
