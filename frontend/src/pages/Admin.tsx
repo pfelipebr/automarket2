@@ -171,7 +171,7 @@ export default function Admin() {
       });
       setLoadResult(data);
     } catch (err) {
-      setLoadResult({ requests: 0, completed: 0, errors: -1, elapsed_ms: 0, rps: 0 });
+      setLoadResult({ requests: 0, completed: 0, errors: -1, status_codes: {}, elapsed_ms: 0, rps: 0 });
     }
     setLoading(false);
   }
