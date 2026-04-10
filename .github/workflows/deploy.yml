@@ -70,6 +70,9 @@ jobs:
       - name: Apply ConfigMap
         run: kubectl apply -f k8s-gke/configmap.yaml
 
+      - name: Apply Ingress
+        run: kubectl apply -f k8s-gke/ingress.yaml
+
       - name: Update backend image
         run: |
           kubectl set image deployment/backend \
